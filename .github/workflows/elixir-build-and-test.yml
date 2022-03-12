@@ -1,0 +1,66 @@
+name: Build and Test Felt Server
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+    strategy:
+      matrix:
+        elixir: ["1.13.3"]
+        otp: ["24.0.5"]
+
+    # Remove if you don't need a database
+    services:
+      db:
+        image: postgis/postgis:13-3.1
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: felt_server_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup Elixir Project
+        uses: ./.github/actions/elixir-setup
+        with:
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
+          build-flags: --all-warnings --warnings-as-errors
+
+      # Remove if you don't need a database
+      - name: Run Migrations
+        run: mix ecto.migrate
+        # Run tests & migrations even if compilation failed (probably due to warnings)
+        # so that we give devs as much feedback as possible & save some time.
+        if: always()
+
+      - name: Run Tests
+        run: mix coveralls.json --warnings-as-errors
+        if: always()
+
+      # Optional, but Codecov has a bot that will comment on your PR with per-file
+      # coverage deltas.
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          files: ./cover/excoveralls.json
+

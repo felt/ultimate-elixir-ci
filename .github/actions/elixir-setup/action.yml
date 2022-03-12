@@ -1,0 +1,109 @@
+name: Setup Elixir Project
+description: Checks out the code, configures Elixir, fetches dependencies, and manages build caching.
+inputs:
+  elixir-version:
+    required: true
+    type: string
+    description: Elixir version to set up
+  otp-version:
+    required: true
+    type: string
+    description: OTP version to set up
+  #################################################################
+  # Everything below this line is optional.
+  #
+  # It's designed to make compiling a reasonably standard Elixir
+  # codebase "just work," though there may be speed gains to be had
+  # by tweaking these flags.
+  #################################################################
+  build-deps:
+    required: false
+    type: boolean
+    default: true
+    description: True if we should compile dependencies
+  build-app:
+    required: false
+    type: boolean
+    default: true
+    description: True if we should compile the application itself
+  build-flags:
+    required: false
+    type: string
+    default: '--all-warnings'
+    description: Flags to pass to mix compile
+  install-rebar:
+    required: false
+    type: boolean
+    default: true
+    description: By default, we will install Rebar (mix local.rebar --force).
+  install-hex:
+    required: false
+    type: boolean
+    default: true
+    description: By default, we will install Hex (mix local.hex --force).
+  cache-key:
+    required: false
+    type: string
+    default: 'v1'
+    description: If you need to reset the cache for some reason, you can change this key.
+runs:
+  using: "composite"
+  steps:
+    - name: Setup elixir
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: ${{ inputs.elixir-version }}
+        otp-version: ${{ inputs.otp-version }}
+
+    - name: Get deps cache
+      uses: actions/cache@v2
+      with:
+        path: deps/
+        key: deps-${{ inputs.cache-key }}-${{ runner.os }}-${{ hashFiles('**/mix.lock') }}
+        restore-keys: |
+          deps-${{ inputs.cache-key }}-${{ runner.os }}-
+
+    - name: Get build cache
+      uses: actions/cache@v2
+      id: build-cache
+      with:
+        path: _build/${{env.MIX_ENV}}/
+        key: build-${{ inputs.cache-key }}-${{ runner.os }}-${{ inputs.otp-version }}-${{ inputs.elixir-version }}-${{ env.MIX_ENV }}-${{ hashFiles('**/mix.lock') }}
+        restore-keys: |
+          build-${{ inputs.cache-key }}-${{ runner.os }}-${{ inputs.otp-version }}-${{ inputs.elixir-version }}-${{ env.MIX_ENV }}-
+
+    # In my experience, I have issues with incremental builds maybe 1 in 100
+    # times that are fixed by doing a full recompile.
+    # In order to not waste dev time on such trivial issues (while also reaping
+    # the time savings of incremental builds for *most* day-to-day development),
+    # I force a full recompile only on builds that we retry.
+    - name: Clean to rule out incremental build as a source of flakiness
+      if: github.run_attempt != '1'
+      run: | 
+        mix deps.clean --all
+        mix clean
+      shell: sh
+
+    - name: Install Rebar
+      run: mix local.rebar --force
+      shell: sh
+      if: inputs.install-rebar == 'true'
+
+    - name: Install Hex
+      run: mix local.hex --force
+      shell: sh
+      if: inputs.install-hex == 'true'
+
+    - name: Install Dependencies
+      run: mix deps.get
+      shell: sh
+
+    - name: Compile Dependencies
+      run: mix deps.compile
+      shell: sh
+      if: inputs.build-deps == 'true'
+
+    - name: Compile Application
+      run: mix compile ${{ inputs.build-flags }}
+      shell: sh
+      if: inputs.build-app == 'true'
