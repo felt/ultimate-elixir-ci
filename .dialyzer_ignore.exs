@@ -5,5 +5,4 @@
 #
 # More info in the Dialyxir README:
 # https://github.com/jeremyjh/dialyxir#elixir-term-format
-[
-]
+[]
