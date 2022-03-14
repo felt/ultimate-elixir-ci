@@ -41,3 +41,9 @@ jobs:
         run: mix credo suggest --min-priority=normal
         # Run Credo even if formatting or the unused deps check failed
         if: always()
+      - name: Check for compile-time dependencies
+        run: mix xref graph --label compile-connected --fail-above 0
+        if: always()
+      - name: Check for security vulnerabilities in Phoenix project
+        run: mix sobelow
+        if: always()
