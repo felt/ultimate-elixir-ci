@@ -12,8 +12,6 @@ jobs:
   quality_checks:
     name: Formatting, Credo, and Unused Deps
     runs-on: ubuntu-latest
-    env:
-      MIX_ENV: test
     strategy:
       matrix:
         elixir: ["1.13.3"]
