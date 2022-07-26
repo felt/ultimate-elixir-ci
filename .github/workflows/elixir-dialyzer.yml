@@ -25,25 +25,31 @@ jobs:
 
       - name: Setup Elixir Project
         uses: ./.github/actions/elixir-setup
+        id: beam
         with:
           elixir-version: ${{ matrix.elixir }}
           otp-version: ${{ matrix.otp }}
           build-app: false
 
-      # Don't cache PLTs based on mix.lock hash, as Dialyzer can incrementally update even old ones.
-      # Cache key based on Elixir & Erlang version (also useful when running in matrix).
+      # Don't cache PLTs based on mix.lock hash, as Dialyzer can incrementally update even old ones
+      # Cache key based on Elixir & Erlang version (also useful when running in matrix)
       - name: Restore PLT cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: plt_cache
         with:
-          key: ${{ runner.os }}-${{ matrix.elixir }}-${{ matrix.otp }}-plt
-          restore-keys: ${{ runner.os }}-${{ matrix.elixir }}-${{ matrix.otp }}-plt
+          key: plt-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}-${{ hashFiles('**/*.ex') }}
+          restore-keys: |
+            plt-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}-${{ hashFiles('**/*.ex') }}
+            plt-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}-
+            plt-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-
+            plt-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-
           path: priv/plts
-      
+
       # Create PLTs if no cache was found.
+      # Always rebuild PLT when a job is retried
       # (If they were cached at all, they'll be updated when we run mix dialyzer with no flags.)
       - name: Create PLTs
-        if: steps.plt_cache.outputs.cache-hit != 'true'
+        if: steps.plt_cache.outputs.cache-hit != 'true' || github.run_attempt != '1'
         run: mix dialyzer --plt
 
       - name: Run Dialyzer
