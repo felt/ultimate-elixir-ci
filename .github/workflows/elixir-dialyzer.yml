@@ -53,4 +53,4 @@ jobs:
         run: mix dialyzer --plt
 
       - name: Run Dialyzer
-        run: mix dialyzer
+        run: mix dialyzer --format github
