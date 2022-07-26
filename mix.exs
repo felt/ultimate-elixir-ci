@@ -32,10 +32,10 @@ defmodule UltimateElixirCI.MixProject do
 
   defp deps do
     [
-      {:credo, "~> 1.6.4", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
-      {:excoveralls, "~> 0.14.4", only: [:dev, :test], runtime: false},
-      {:sobelow, "~> 0.8", only: :dev}
+      {:credo, "~> 1.6.5", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.2", only: [:dev, :test], runtime: false},
+      {:excoveralls, "~> 0.14.6", only: [:dev, :test], runtime: false},
+      {:sobelow, "~> 0.11", only: :dev}
     ]
   end
 
