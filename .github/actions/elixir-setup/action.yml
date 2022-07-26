@@ -46,11 +46,19 @@ inputs:
     type: string
     default: 'v1'
     description: If you need to reset the cache for some reason, you can change this key.
+outputs:
+  otp-version:
+    description: "Exact OTP version selected by the BEAM setup step"
+    value: ${{ steps.beam.outputs.otp-version }}
+  elixir-version:
+    description: "Exact Elixir version selected by the BEAM setup step"
+    value: ${{ steps.beam.outputs.elixir-version }}
 runs:
   using: "composite"
   steps:
     - name: Setup elixir
       uses: erlef/setup-beam@v1
+      id: beam
       with:
         elixir-version: ${{ inputs.elixir-version }}
         otp-version: ${{ inputs.otp-version }}
