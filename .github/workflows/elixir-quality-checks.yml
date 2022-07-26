@@ -14,8 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        elixir: ["1.13.3"]
-        otp: ["24.0.5"]
+        elixir: ["1.13.4"]
+        otp: ["24.3.4"]
 
     steps:
       - name: Checkout repository
