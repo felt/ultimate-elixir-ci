@@ -72,6 +72,15 @@ runs:
         restore-keys: |
           build-${{ inputs.cache-key }}-${{ runner.os }}-${{ inputs.otp-version }}-${{ inputs.elixir-version }}-${{ env.MIX_ENV }}-
 
+    - name: Get Hex cache
+      uses: actions/cache@v2
+      id: hex-cache
+      with:
+        path: ~/.hex
+        key: build-${{ runner.os }}-${{ inputs.otp-version }}-${{ inputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}
+        restore-keys: |
+          build-${{ runner.os }}-${{ inputs.otp-version }}-${{ inputs.elixir-version }}-
+
     # In my experience, I have issues with incremental builds maybe 1 in 100
     # times that are fixed by doing a full recompile.
     # In order to not waste dev time on such trivial issues (while also reaping
@@ -98,8 +107,14 @@ runs:
       run: mix deps.get
       shell: sh
 
+    # Normally we'd use `mix deps.compile` here, however that incurs a large
+    # performance penalty when the dependencies are already fully compiled:
+    # https://elixirforum.com/t/github-action-cache-elixir-always-recompiles-dependencies-elixir-1-13-3/45994/12
+    #
+    # Accoring to Jose Valim at the above link `mix loadpaths` will check and
+    # compile missing dependencies
     - name: Compile Dependencies
-      run: mix deps.compile
+      run: mix loadpaths
       shell: sh
       if: inputs.build-deps == 'true'
 
