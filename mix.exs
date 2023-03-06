@@ -34,7 +34,7 @@ defmodule UltimateElixirCI.MixProject do
     [
       {:credo, "~> 1.6.5", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.2", only: [:dev, :test], runtime: false},
-      {:excoveralls, "~> 0.15.0", only: [:dev, :test], runtime: false},
+      {:excoveralls, "~> 0.16.0", only: [:dev, :test], runtime: false},
       {:sobelow, "~> 0.11", only: :dev}
     ]
   end
